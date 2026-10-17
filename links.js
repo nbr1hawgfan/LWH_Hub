@@ -1,21 +1,17 @@
 /* ==========================================================================
-   LWH HUB — LINKS  (the only file you need to edit to add / change tiles)
+   LWH HUB — CONFIG + FALLBACK LIST
    --------------------------------------------------------------------------
-   Each tile:
-     { name: 'Shown on the tile',
-       url:  'https://…',
-       desc: 'One short line under the name',
-       icon: '📅',                       // any emoji
-       type: 'app',                      // optional — normally detected automatically:
-                                         //   GitHub apps = 'app', sites.google.com = 'site',
-                                         //   Drive/Docs = 'doc', anything else = 'link'
-       for:  ['everyone']                // who it's for — any of:
-                                         //   'everyone', 'warehouse', 'transportation',
-                                         //   'managers', 'hr', 'customers'
-     }
-   Sections show in the order below. Remove a tile = delete its line.
-   After you edit and commit on GitHub, the hub updates in a minute or two.
+   Tiles are now managed in the "LWH Hub Links" Google Sheet — add/edit them
+   from the hub (✎ Edit hub, after signing in as an admin) or on the Sheet.
+
+   HUB_API_URL below connects the hub to that Sheet. The HUB_SECTIONS list
+   further down is ONLY a backup shown if the Sheet can't be reached. It has
+   no manager-only links on purpose: this file is public on GitHub.
    ========================================================================== */
+
+window.HUB_CONFIG = {
+  API_URL: ''   // ← paste the LWH Hub Apps Script /exec URL here
+};
 
 window.PTO_CONFIG = {
   WEATHER: { name: 'Fort Smith, AR', lat: 35.3859, lon: -94.3985 },
@@ -72,19 +68,6 @@ window.HUB_SECTIONS = [
       { name: 'Load Board', url: 'https://nbr1hawgfan.github.io/LWH_LoadBoard/', desc: 'Loads and dispatch board', icon: '🗺️', for: ['transportation', 'managers'] },
       { name: 'Yard Check', url: 'https://nbr1hawgfan.github.io/Yard_Check/', desc: 'Count trailers at a customer yard', icon: '🅿️', for: ['transportation'] },
       { name: 'Trailer Dwell', url: 'https://nbr1hawgfan.github.io/Trailer_Dwell/', desc: 'Trailer dwell time at customer sites', icon: '⏳', for: ['transportation', 'managers'] }
-    ]
-  },
-  {
-    title: 'Managers',
-    links: [
-      { name: 'Manager Dashboard', url: 'https://sites.google.com/logisticswarehouse.net/managerdashboard/home', desc: 'Manager links, sheets and dashboards', icon: '🧭', for: ['managers'] },
-      { name: 'Warehouse & Transportation Summaries', url: 'https://sites.google.com/logisticswarehouse.net/daily-summary-page/home', desc: 'Daily warehouse and transportation summaries', icon: '📊', for: ['managers'] },
-      { name: 'PTO Manager', url: 'https://nbr1hawgfan.github.io/LWH_PTO/manager/', desc: 'Approvals, asks, team calendar, HR reports', icon: '✅', for: ['managers', 'hr'] },
-      { name: 'Transportation Manager', url: 'https://nbr1hawgfan.github.io/LWH_Transportation_Manager/', desc: 'Unpaid time off, trailers, dispatch tools', icon: '🗂️', for: ['managers'] },
-      { name: 'Driver & Trailer Tracking', url: 'https://nbr1hawgfan.github.io/LWH_Driver-and-Trailer-Tracking/', desc: 'Where drivers and trailers are', icon: '📍', for: ['managers'] },
-      { name: 'Forklift Repair Costing', url: 'https://nbr1hawgfan.github.io/LWH_Forklift_Repair_Costing/', desc: 'PM and repair costs by forklift', icon: '💲', for: ['managers'] },
-      { name: 'Absence Calendar', url: 'https://nbr1hawgfan.github.io/LWH_Absence_Calendar/', desc: 'Who is out — team absence calendar', icon: '📅', for: ['managers', 'hr'] },
-      { name: 'Customer Shipment Weights', url: 'https://nbr1hawgfan.github.io/Customer_Shipment_Weights/', desc: 'Shipment weights by customer', icon: '⚖️', for: ['managers'] }
     ]
   },
   {

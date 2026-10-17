@@ -5,16 +5,15 @@ The Logistics Warehouse company hub: every app, Google Site, Sheet and tool in o
 **Live at:** https://hub.logisticswarehouse.net (also https://nbr1hawgfan.github.io/LWH_Hub/)
 
 ## Add or change a tile
-Edit **`links.js`** on GitHub (pencil icon) → add a line in the right section → **Commit changes**. The hub updates in a minute or two.
+Tiles live in the **LWH Hub Links** Google Sheet. Change them from the hub: **🔑 Manager sign-in** → **✎ Edit hub** (admins only). You can also edit the **Links** tab directly.
 
-```js
-{ name: 'Manager Site', url: 'https://sites.google.com/…', desc: 'One short line', icon: '🧭', for: ['managers'] },
-```
+`links.js` holds the Sheet's API address (`HUB_CONFIG.API_URL`) plus a **public-only backup list**, which is shown only if the Sheet can't be reached. Manager-only links are deliberately left out of this public repo.
 
-`for` can be any of `'everyone'`, `'warehouse'`, `'transportation'`, `'managers'`, `'hr'`, `'customers'`. It drives the filter chips (team filters also show the "everyone" tiles) and the tile's color stripe: red = everyone/warehouse, dark red = transportation, black = managers, amber = HR, blue = customers.
+Tiles marked **Locked** in the Sheet are sent to the hub only after a manager signs in with their PTO manager PIN.
 
 ## Features
-- Search (press **/**), filter by audience, ★ pin favorites (saved per device)
+- Search (press **/**), filter by department and Apps vs Sites, ★ pin favorites (saved per device)
+- Manager-only tiles unlocked with the PTO manager PIN; admins edit tiles in place
 - Fort Smith weather, greeting and clock
 - Installable to a phone or desktop home screen
 
