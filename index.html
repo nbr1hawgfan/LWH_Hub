@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="LWH Hub">
   <link rel="preload" href="assets/fonts/oswald-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="assets/css/theme.css?v=1.0.0">
+  <link rel="stylesheet" href="assets/css/theme.css?v=1.1.0">
   <style>
     .hub-top { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; margin-bottom: 22px; align-items: stretch; }
     .hub-hello h1 { font-family: var(--head); font-weight: 700; font-size: 34px; text-transform: uppercase; line-height: 1.05; }
@@ -30,6 +30,7 @@
     .ht:hover { border-color: #cfcfcf; border-left-color: var(--red); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.08); }
     .ht.mgr { border-left-color: var(--black); }
     .ht.cust { border-left-color: var(--blue); }
+    .ht.tr { border-left-color: #7A0C1E; }
     .ht.off { border-left-color: #E39400; }
     .ht .ic { width: 44px; height: 44px; flex: 0 0 auto; display: grid; place-items: center; font-size: 22px; background: var(--page); }
     .ht b { display: block; font-family: var(--head); font-weight: 600; font-size: 16.5px; letter-spacing: .2px; line-height: 1.2; }
@@ -69,8 +70,10 @@
       <div class="chips" id="who" style="margin:0">
         <button class="chip on" data-w="all">Everything</button>
         <button class="chip" data-w="everyone">Everyone</button>
+        <button class="chip" data-w="warehouse">Warehouse</button>
+        <button class="chip" data-w="transportation">Transportation</button>
         <button class="chip" data-w="managers">Managers</button>
-        <button class="chip" data-w="office">Office</button>
+        <button class="chip" data-w="hr">HR</button>
         <button class="chip" data-w="customers">Customers</button>
       </div>
       <span class="hint-key">☆ Star a tile to pin it to the top — saved on this device.</span>
@@ -83,8 +86,8 @@
 
   <footer class="footer">Logistics Warehouse, Inc. · 700 Fresno Street, Fort Smith, AR · 1-479-410-2611</footer>
 
-  <script src="links.js?v=1.0.0"></script>
-  <script src="assets/js/common.js?v=1.0.0"></script>
-  <script src="assets/js/hub.js?v=1.0.0"></script>
+  <script src="links.js?v=1.1.0"></script>
+  <script src="assets/js/common.js?v=1.1.0"></script>
+  <script src="assets/js/hub.js?v=1.1.0"></script>
 </body>
 </html>

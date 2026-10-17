@@ -32,8 +32,9 @@
     const f = l.for || ['everyone'];
     if (f.indexOf('everyone') !== -1) return '';
     if (f.indexOf('managers') !== -1) return 'mgr';
-    if (f.indexOf('office') !== -1) return 'off';
+    if (f.indexOf('hr') !== -1) return 'off';
     if (f.indexOf('customers') !== -1) return 'cust';
+    if (f.indexOf('transportation') !== -1) return 'tr';
     return '';
   };
   function tile(l) {
@@ -45,7 +46,12 @@
       '<button class="star' + (on ? ' on' : '') + '" data-fav="' + esc(l.url) + '" title="' + (on ? 'Unpin' : 'Pin to top') + '" aria-label="' + (on ? 'Unpin' : 'Pin') + ' ' + esc(l.name) + '">' + (on ? '★' : '☆') + '</button></a>';
   }
   function matches(l, q) {
-    if (who !== 'all' && (l.for || ['everyone']).indexOf(who) === -1) return false;
+    const f = l.for || ['everyone'];
+    // a team filter (Warehouse, Transportation, Managers, HR) also shows the "everyone" tiles
+    if (who !== 'all') {
+      const team = who !== 'everyone' && who !== 'customers';
+      if (f.indexOf(who) === -1 && !(team && f.indexOf('everyone') !== -1)) return false;
+    }
     if (!q) return true;
     return (l.name + ' ' + (l.desc || '') + ' ' + l.section + ' ' + host(l.url)).toLowerCase().indexOf(q) !== -1;
   }

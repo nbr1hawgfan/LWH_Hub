@@ -11,7 +11,7 @@ Edit **`links.js`** on GitHub (pencil icon) → add a line in the right section 
 { name: 'Manager Site', url: 'https://sites.google.com/…', desc: 'One short line', icon: '🧭', for: ['managers'] },
 ```
 
-`for` can be any of `'everyone'`, `'managers'`, `'office'`, `'customers'` — it drives the filter chips and the tile's color stripe (red = everyone, black = managers, amber = office, blue = customers).
+`for` can be any of `'everyone'`, `'warehouse'`, `'transportation'`, `'managers'`, `'hr'`, `'customers'`. It drives the filter chips (team filters also show the "everyone" tiles) and the tile's color stripe: red = everyone/warehouse, dark red = transportation, black = managers, amber = HR, blue = customers.
 
 ## Features
 - Search (press **/**), filter by audience, ★ pin favorites (saved per device)
