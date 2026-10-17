@@ -6,6 +6,9 @@
        url:  'https://…',
        desc: 'One short line under the name',
        icon: '📅',                       // any emoji
+       type: 'app',                      // optional — normally detected automatically:
+                                         //   GitHub apps = 'app', sites.google.com = 'site',
+                                         //   Drive/Docs = 'doc', anything else = 'link'
        for:  ['everyone']                // who it's for — any of:
                                          //   'everyone', 'warehouse', 'transportation',
                                          //   'managers', 'hr', 'customers'
