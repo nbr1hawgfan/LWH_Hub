@@ -17,6 +17,7 @@
   let session = P.store.get(K.sess);
   if (!session || !session.token || session.expires < Date.now()) { session = null; P.store.del(K.sess); }
   let SECTIONS = [];          // [{title, links:[...], lockedCount}]
+  let ANN = [];               // live announcements
   let source = 'fallback';    // 'live' | 'cache' | 'fallback'
   let editMode = false, adminRows = null, adminSections = [];
 
@@ -62,14 +63,15 @@
     try {
       const d = await api('links');
       SECTIONS = d.sections || [];
+      ANN = d.announcements || [];
       source = 'live';
       if (session && !d.session) lockUp(true);
-      if (session && d.session) { session.admin = !!d.session.admin; P.store.set(K.sess, session, true); }
+      if (session && d.session) { session.admin = !!d.session.admin; session.poster = !!d.session.poster; P.store.set(K.sess, session, true); }
       // only the public list is cached on the device
-      if (!session) { try { localStorage.setItem(K.cache, JSON.stringify({ t: Date.now(), s: SECTIONS })); } catch (e) {} }
+      if (!session) { try { localStorage.setItem(K.cache, JSON.stringify({ t: Date.now(), s: SECTIONS, a: ANN })); } catch (e) {} }
     } catch (e) {
       let c = null; try { c = JSON.parse(localStorage.getItem(K.cache) || 'null'); } catch (x) {}
-      if (c && c.s) { SECTIONS = c.s; source = 'cache'; } else { SECTIONS = fromLinksJs(); source = 'fallback'; }
+      if (c && c.s) { SECTIONS = c.s; ANN = c.a || []; source = 'cache'; } else { SECTIONS = fromLinksJs(); ANN = []; source = 'fallback'; }
     }
     render();
   }
@@ -145,6 +147,7 @@
   }
   function render() {
     renderBar();
+    renderNews();
     const q = $('#q').value.trim().toLowerCase();
     const view = sectionsForView();
     const all = []; view.forEach(s => s.links.forEach(l => all.push(Object.assign({ section: s.title }, l))));
@@ -175,11 +178,13 @@
     const box = $('#acct');
     if (!HAS_API) { box.innerHTML = ''; return; }
     if (editMode) {
-      box.innerHTML = '<span class="edit-badge">✎ Editing the hub</span><button class="btn btn-red btn-sm" data-add="">＋ New tile</button><button class="btn btn-black btn-sm" id="doneEdit">Done</button>';
+      box.innerHTML = '<span class="edit-badge">✎ Editing tiles</span><button class="btn btn-red btn-sm" data-add="">＋ New tile</button><button class="btn btn-black btn-sm" id="doneEdit">Done</button>';
       $('#doneEdit').onclick = () => { editMode = false; document.body.classList.remove('editing'); load(); };
     } else if (session) {
-      box.innerHTML = (session.admin ? '<button class="btn btn-black btn-sm" id="startEdit">✎ Edit hub</button>' : '') +
+      box.innerHTML = (session.poster ? '<button class="btn btn-red btn-sm" id="newsBtn">📣 Announcements</button>' : '') +
+        (session.admin ? '<button class="btn btn-black btn-sm" id="startEdit">✎ Edit tiles</button>' : '') +
         '<button class="btn btn-ghost btn-sm" id="lockBtn">🔒 Lock</button>';
+      if (session.poster) $('#newsBtn').onclick = manageNews;
       if (session.admin) $('#startEdit').onclick = startEdit;
       $('#lockBtn').onclick = () => { lockUp(); P.toast('Manager tools locked on this device.'); };
     } else {
@@ -277,6 +282,120 @@
     catch (e) { P.busy(false); P.toast(e.message, true); }
   }
 
+
+  // ---------------------------------------------------------- announcements
+  const ANN_T = {
+    alert: { icon: '🚨', label: 'Alert', cls: 'alert' },
+    notice: { icon: '📅', label: 'Notice', cls: 'notice' },
+    celebrate: { icon: '🎉', label: 'Celebration', cls: 'celebrate' }
+  };
+  const annBody = t => esc(t || '').replace(/\n/g, '<br>');
+  const annWhen = a => {
+    if (a.type === 'alert') return a.end ? 'Through ' + P.fmt(a.end, 'dow') : '';
+    if (a.start && a.end && a.start !== a.end) return P.fmt(a.start, 'md') + ' – ' + P.fmt(a.end, 'md');
+    return a.start ? P.fmt(a.start, 'dow') : '';
+  };
+  const annLink = (a, cls) => a.link ? '<a class="' + cls + '" href="' + esc(a.link) + '" target="_blank" rel="noopener">' + esc(a.linkLabel || 'Learn more') + ' →</a>' : '';
+  function renderNews() {
+    const alerts = editMode ? [] : ANN.filter(a => a.type === 'alert');
+    const news = editMode ? [] : ANN.filter(a => a.type !== 'alert');
+    $('#alerts').innerHTML = alerts.map(a =>
+      '<div class="alert-bar"><span class="ai">🚨</span><div class="at"><b>' + esc(a.title) + '</b>' +
+      (a.message ? '<div>' + annBody(a.message) + '</div>' : '') +
+      '<div class="am">' + esc(annWhen(a)) + (a.audience === 'managers' ? ' · Managers' : '') + '</div></div>' + annLink(a, 'al') + '</div>').join('');
+    const box = $('#news');
+    if (!news.length) { box.innerHTML = ''; box.hidden = true; return; }
+    box.hidden = false;
+    const MAX = 6, more = news.length > MAX && !box.dataset.all;
+    box.innerHTML = '<div class="sec-title">📣 Company News <span class="n">' + news.length + '</span></div><div class="news-grid">' +
+      (more ? news.slice(0, MAX) : news).map(a => {
+        const t = ANN_T[a.type] || ANN_T.notice;
+        return '<article class="news ' + t.cls + '"><div class="nh"><span class="ni">' + t.icon + '</span><span class="nk">' + t.label +
+          (a.pinned ? ' · 📌' : '') + (a.audience === 'managers' ? ' · 🔒 Managers' : '') + '</span><span class="nd">' + esc(annWhen(a)) + '</span></div>' +
+          '<h3>' + esc(a.title) + '</h3>' + (a.message ? '<p>' + annBody(a.message) + '</p>' : '') + annLink(a, 'nl') + '</article>';
+      }).join('') + '</div>' +
+      (more ? '<button class="btn btn-ghost btn-sm" id="newsAll" style="margin-top:10px">Show all ' + news.length + '</button>' : '');
+    const all = $('#newsAll'); if (all) all.onclick = () => { box.dataset.all = '1'; renderNews(); };
+  }
+
+  let annRows = [];
+  async function manageNews() {
+    P.busy('Loading…');
+    try { annRows = (await api('ann.list')).rows || []; } catch (e) { P.busy(false); return P.toast(e.message, true); }
+    P.busy(false);
+    const today = P.ymd(P.today());
+    const status = a => !a.active ? ['Hidden', 'b-cancelled'] : (a.start && a.start > today) ? ['Scheduled', 'b-pending'] : (a.end && a.end < today) ? ['Ended', 'b-cancelled'] : ['Live', 'b-approved'];
+    const v = await P.modal({
+      title: 'Announcements', wide: true,
+      html: '<div class="btn-row" style="margin-bottom:14px">' +
+        '<button class="btn btn-red btn-sm" data-newann="alert">🚨 New alert</button>' +
+        '<button class="btn btn-black btn-sm" data-newann="notice">📅 New notice</button>' +
+        '<button class="btn btn-ghost btn-sm" data-newann="celebrate">🎉 New celebration</button></div>' +
+        (annRows.length ? '<div class="table-wrap"><table class="tbl"><thead><tr><th>Type</th><th>Headline</th><th>Dates</th><th>Status</th><th></th></tr></thead><tbody>' +
+          annRows.map(a => { const st = status(a); return '<tr><td>' + (ANN_T[a.type] || ANN_T.notice).icon + ' ' + (ANN_T[a.type] || ANN_T.notice).label + '</td><td><b>' + esc(a.title) + '</b>' +
+            (a.audience === 'managers' ? ' <span class="badge b-denied">Managers</span>' : '') + '</td><td>' + esc((a.start ? P.fmt(a.start, 'md') : 'Now') + ' → ' + (a.end ? P.fmt(a.end, 'md') : 'No end')) + '</td>' +
+            '<td><span class="badge ' + st[1] + '">' + st[0] + '</span></td><td><button class="btn btn-ghost btn-sm" data-editann="' + esc(a.id) + '">Edit</button></td></tr>'; }).join('') +
+          '</tbody></table></div>' : '<div class="empty">No announcements yet.</div>'),
+      buttons: [{ label: 'Close', cls: 'btn-black', value: null }]
+    });
+    return v;
+  }
+
+  async function editNews(id, type) {
+    const a = id ? annRows.find(x => x.id === id) : { type: type || 'notice', active: true, audience: 'everyone', start: P.ymd(P.today()), end: type === 'alert' ? P.ymd(P.today()) : '' };
+    if (!a) return;
+    const hint = {
+      alert: 'Shows as a red banner across the top of the hub. Use for closures, delayed starts and emergencies. It disappears after the end date.',
+      notice: 'A news card, e.g. “Open enrollment starts Dec 1”. Schedule it ahead with a start date.',
+      celebrate: 'A congratulations card, e.g. “Congratulations Jane Doe — 10 years with LWH!”'
+    };
+    const v = await P.modal({
+      title: id ? 'Edit Announcement' : 'New ' + (ANN_T[a.type] || ANN_T.notice).label, wide: true,
+      html: '<div class="field"><label>Type</label><div class="seg" id="anType">' + Object.keys(ANN_T).map(k =>
+          '<button type="button" data-t="' + k + '"' + (a.type === k ? ' class="on"' : '') + '>' + ANN_T[k].icon + ' ' + ANN_T[k].label + '</button>').join('') + '</div>' +
+        '<div class="hint" id="anHint">' + hint[a.type] + '</div></div>' +
+        '<div class="field"><label for="anTitle">Headline</label><input class="input" id="anTitle" maxlength="120" value="' + esc(a.title || '') + '" placeholder="' + (a.type === 'alert' ? 'e.g. All locations closed today — ice' : a.type === 'celebrate' ? 'e.g. Congratulations Jane Doe — 10 Years!' : 'e.g. Open Enrollment starts December 1') + '"></div>' +
+        '<div class="field"><label for="anMsg">Message <span style="text-transform:none;letter-spacing:0;color:var(--muted)">(optional)</span></label><textarea class="input" id="anMsg" maxlength="2000">' + esc(a.message || '') + '</textarea></div>' +
+        '<div class="row-2"><div class="field"><label for="anLink">Link <span style="text-transform:none;letter-spacing:0;color:var(--muted)">(optional)</span></label><input class="input" id="anLink" type="url" placeholder="https://…" value="' + esc(a.link || '') + '"></div>' +
+        '<div class="field"><label for="anLinkL">Link text</label><input class="input" id="anLinkL" maxlength="40" placeholder="Learn more" value="' + esc(a.linkLabel || '') + '"></div></div>' +
+        '<div class="row-2"><div class="field"><label for="anStart">Show from</label><input class="input" type="date" id="anStart" value="' + esc(a.start || '') + '"></div>' +
+        '<div class="field"><label for="anEnd">Show through</label><input class="input" type="date" id="anEnd" value="' + esc(a.end || '') + '"><div class="hint">Leave blank to keep it up until you remove it.</div></div></div>' +
+        '<label class="check"><input type="checkbox" id="anMgr"' + (a.audience === 'managers' ? ' checked' : '') + '> 🔒 Managers only (shows after manager sign-in)</label>' +
+        '<label class="check" style="margin-top:-8px"><input type="checkbox" id="anPin"' + (a.pinned ? ' checked' : '') + '> 📌 Pin to the front of Company News</label>' +
+        '<label class="check" style="margin-top:-8px"><input type="checkbox" id="anActive"' + (a.active !== false ? ' checked' : '') + '> Show on the hub</label>' +
+        '<div class="note" style="margin-top:4px;font-size:13px">The hub is a public page. Keep pay, benefit costs and health details off the board — link to a restricted doc instead.</div>',
+      buttons: (id ? [{ label: 'Delete', cls: 'btn-ghost', value: 'delete' }] : []).concat([
+        { label: 'Cancel', cls: 'btn-ghost', value: null },
+        {
+          label: id ? 'Save' : 'Post', cls: 'btn-red',
+          validate: m => { if (!$('#anTitle', m).value.trim()) return 'Add a headline.'; const l = $('#anLink', m).value.trim(); if (l && !/^https?:\/\/\S+$/i.test(l)) return 'Link must start with https://';
+            const s1 = $('#anStart', m).value, e1 = $('#anEnd', m).value; if (s1 && e1 && e1 < s1) return '“Show through” is before “Show from”.'; return ''; },
+          value: m => ({
+            id: id || '', type: ($('#anType .on', m) || {}).dataset ? $('#anType .on', m).dataset.t : 'notice',
+            title: $('#anTitle', m).value.trim(), message: $('#anMsg', m).value.trim(), link: $('#anLink', m).value.trim(), linkLabel: $('#anLinkL', m).value.trim(),
+            start: $('#anStart', m).value, end: $('#anEnd', m).value, audience: $('#anMgr', m).checked ? 'managers' : 'everyone',
+            pinned: $('#anPin', m).checked, active: $('#anActive', m).checked
+          })
+        }])
+    });
+    if (!v) return manageNews();
+    if (v === 'delete') {
+      if (!(await P.confirmBox('Delete announcement?', '<p>Remove <b>' + esc(a.title) + '</b> for everyone?</p>', 'Delete', 'btn-red'))) return manageNews();
+      P.busy('Deleting…');
+      try { await api('ann.delete', { id }); P.busy(false); P.toast('Deleted.'); await load(); } catch (e) { P.busy(false); P.toast(e.message, true); }
+      return manageNews();
+    }
+    P.busy(id ? 'Saving…' : 'Posting…');
+    try {
+      await api('ann.save', { ann: v });
+      P.busy(false);
+      const today = P.ymd(P.today());
+      P.toast(v.start && v.start > today ? 'Scheduled — it will appear on ' + P.fmt(v.start, 'dow') + '.' : (id ? 'Saved.' : 'Posted — live on the hub now.'));
+      await load();
+    } catch (e) { P.busy(false); P.toast(e.message, true); }
+    manageNews();
+  }
+
   // ---------------------------------------------------------------- events
   $('#q').addEventListener('input', render);
   $('#q').addEventListener('keydown', e => {
@@ -306,6 +425,17 @@
   document.addEventListener('click', async e => {
     const fc = e.target.closest('#etFor .chip');
     if (fc) { fc.classList.toggle('on'); return; }
+    const at = e.target.closest('#anType button');
+    if (at) {
+      $$('#anType button').forEach(x => x.classList.toggle('on', x === at));
+      const H = { alert: 'Shows as a red banner across the top of the hub. Use for closures, delayed starts and emergencies. It disappears after the end date.', notice: 'A news card, e.g. “Open enrollment starts Dec 1”. Schedule it ahead with a start date.', celebrate: 'A congratulations card, e.g. “Congratulations Jane Doe — 10 years with LWH!”' };
+      $('#anHint').textContent = H[at.dataset.t];
+      return;
+    }
+    const na = e.target.closest('[data-newann]');
+    if (na) { const bg = na.closest('.modal-bg'); if (bg) bg.remove(); return editNews('', na.dataset.newann); }
+    const ea = e.target.closest('[data-editann]');
+    if (ea) { const bg = ea.closest('.modal-bg'); if (bg) bg.remove(); return editNews(ea.dataset.editann); }
     const fav = e.target.closest('[data-fav]');
     if (fav) {
       e.preventDefault(); e.stopPropagation();
