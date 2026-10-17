@@ -10,7 +10,7 @@
    ========================================================================== */
 
 window.HUB_CONFIG = {
-  API_URL: ''   // ← paste the LWH Hub Apps Script /exec URL here
+  API_URL: 'https://script.google.com/macros/s/AKfycbwYqndx1hRNXRu04gP2x8qRdk6gHsgkOaUKfQkEGFwRI0uIVxH1LziqMpCLtuDdAcRk/exec'   // LWH Hub Links Sheet
 };
 
 window.PTO_CONFIG = {
