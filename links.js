@@ -90,7 +90,7 @@ window.HUB_SECTIONS = [
   {
     title: 'HR',
     links: [
-      { name: 'Logistics HR Dashboard', url: 'https://nbr1hawgfan.github.io/LWH_PTO/#home', desc: 'PTO balances and time off', icon: '👥', for: ['hr'] }
+      { name: 'Logistics HR Dashboard', url: 'https://sites.google.com/logisticswarehouse.net/logistics-hr-dashboard/company-messaging-and-announcements-app', desc: 'HR dashboard — company messaging and announcements', icon: '👥', for: ['hr'] }
     ]
   },
   {
