@@ -34,7 +34,7 @@ window.HUB_SECTIONS = [
       { name: 'Business Cards', url: 'https://nbr1hawgfan.github.io/LWH_Business-Card/', desc: 'Digital company business cards', icon: '🪪', for: ['everyone'] },
       { name: 'LWH COMS', url: 'https://nbr1hawgfan.github.io/LWH_COMS/', desc: 'Company communications', icon: '📣', for: ['everyone'] },
       { name: 'Safety Training — Drivers', url: 'https://logisticswarehouse.infinit-i.net/#/login', desc: 'Infinit-I driver safety training', icon: '🦺', for: ['transportation'] },
-      { name: 'Safety Training — Warehouse', url: 'https://script.google.com/a/macros/logisticswarehouse.net/s/AKfycbxY_tZyajeHo00TH_EWaFgHBhG-fOWN8uxeXwxufDBzVnA8cOZxCdDtkdJ7N_O0uKfK/exec', desc: 'Warehouse safety training', icon: '⛑️', for: ['warehouse'] }
+      { name: 'Safety Training — Warehouse', url: 'https://nbr1hawgfan.github.io/LWH_Safety_Training/', desc: 'Warehouse safety training', icon: '⛑️', for: ['warehouse'] }
     ]
   },
   {
