@@ -10,6 +10,11 @@
    ========================================================================== */
 
 window.HUB_CONFIG = {
+  // National Weather Service warnings shown in the red banner (Severe/Extreme only).
+  // Add a line for Dallas when that location opens:  { name: 'Dallas', lat: 32.7767, lon: -96.7970 }
+  NWS_POINTS: [
+    { name: 'Fort Smith', lat: 35.3859, lon: -94.3985 }
+  ],
   API_URL: 'https://script.google.com/macros/s/AKfycbwYqndx1hRNXRu04gP2x8qRdk6gHsgkOaUKfQkEGFwRI0uIVxH1LziqMpCLtuDdAcRk/exec'   // LWH Hub Links Sheet
 };
 

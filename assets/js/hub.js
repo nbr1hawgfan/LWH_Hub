@@ -18,6 +18,8 @@
   if (!session || !session.token || session.expires < Date.now()) { session = null; P.store.del(K.sess); }
   let SECTIONS = [];          // [{title, links:[...], lockedCount}]
   let ANN = [];               // live announcements
+  let NWS = [];               // National Weather Service warnings
+  let OUT = null;             // who's out (managers)
   let source = 'fallback';    // 'live' | 'cache' | 'fallback'
   let editMode = false, adminRows = null, adminSections = [];
 
@@ -74,6 +76,85 @@
       if (c && c.s) { SECTIONS = c.s; ANN = c.a || []; source = 'cache'; } else { SECTIONS = fromLinksJs(); ANN = []; source = 'fallback'; }
     }
     render();
+    if (session) loadOut(); else { OUT = null; renderOut(); }
+  }
+
+  // ------------------------------------------------------------ who's out
+  async function loadOut(fresh) {
+    try { OUT = await api('whosout', fresh ? { fresh: true } : {}); }
+    catch (e) { OUT = { error: /PTO_RELOGIN/.test(e.message) ? 'relogin' : e.message }; }
+    renderOut();
+  }
+  function outRow(r, showDates) {
+    const same = r.start === r.end;
+    const when = same ? P.fmt(r.start, 'dow') : P.fmt(r.start, 'md') + ' – ' + P.fmt(r.end, 'md');
+    return '<div class="out-r"><span class="avatar">' + esc(P.initials(r.name)) + '</span><span class="out-n"><b>' + esc(r.name) + '</b><span>' + esc(r.type) + '</span></span>' +
+      '<span class="out-w">' + esc(showDates ? when : (same ? 'Today' : 'Back after ' + P.fmt(r.end, 'md'))) + '</span></div>';
+  }
+  function renderOut() {
+    const box = $('#whosOut');
+    if (!session || editMode) { box.hidden = true; box.innerHTML = ''; return; }
+    box.hidden = false;
+    const head = '<div class="card-head"><h2>👥 Who’s Out</h2><span class="out-tools">' +
+      '<a class="how" href="https://nbr1hawgfan.github.io/LWH_PTO/manager/#calendar" target="_blank" rel="noopener">Team calendar ↗</a>' +
+      '<button class="how" id="outRefresh" title="Refresh">↻</button></span></div>';
+    let body;
+    if (!OUT) body = '<div class="card-body"><div class="skel"></div><div class="skel" style="width:60%"></div></div>';
+    else if (OUT.error === 'relogin') body = '<div class="card-body"><div class="note">Your PTO sign-in has timed out. <button class="how" data-relogin>Enter your PIN again</button> to see who’s out.</div></div>';
+    else if (OUT.error) body = '<div class="card-body"><div class="note warn">' + esc(OUT.error) + '</div></div>';
+    else {
+      const later = OUT.outWeek.filter(r => !(r.start <= OUT.today && r.end >= OUT.today));
+      body = '<div class="out-grid">' +
+        '<div><div class="out-h">Today · ' + esc(P.fmt(OUT.today, 'dow')) + ' <span class="n">' + OUT.outToday.length + '</span></div>' +
+        (OUT.outToday.length ? OUT.outToday.map(r => outRow(r, false)).join('') : '<div class="out-e">✅ Everyone’s in</div>') + '</div>' +
+        '<div><div class="out-h">This week · ' + esc(P.fmt(OUT.weekStart, 'md') + ' – ' + P.fmt(OUT.weekEnd, 'md')) + ' <span class="n">' + later.length + '</span></div>' +
+        (later.length ? later.map(r => outRow(r, true)).join('') : '<div class="out-e">No one else out this week</div>') + '</div></div>' +
+        (OUT.pending ? '<div class="out-p"><a href="https://nbr1hawgfan.github.io/LWH_PTO/manager/#approvals" target="_blank" rel="noopener">⏳ ' + OUT.pending + ' PTO request' + (OUT.pending === 1 ? '' : 's') + ' waiting for approval →</a></div>' : '');
+    }
+    box.innerHTML = head + body;
+    $('#outRefresh').onclick = () => { OUT = null; renderOut(); loadOut(true); };
+  }
+
+  // ------------------------------------------------- National Weather Service
+  const NWS_KEY = 'lwhhub_nws';
+  function nwsBar(a) {
+    const until = a.ends || a.expires;
+    const untilTxt = until ? 'Until ' + new Date(until).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' }) : '';
+    return '<div class="alert-bar nws ' + (a.severity === 'Extreme' ? 'ext' : '') + '"><span class="ai">⚠️</span><div class="at">' +
+      '<b>' + esc(a.event) + ' — ' + esc(a.place) + '</b><div>' + esc(a.headline || '') + '</div>' +
+      '<div class="am">National Weather Service' + (untilTxt ? ' · ' + esc(untilTxt) : '') + '</div></div>' +
+      '<a class="al" href="' + esc(a.link) + '" target="_blank" rel="noopener">Details</a></div>';
+  }
+  async function loadNWS() {
+    const pts = ((window.HUB_CONFIG || {}).NWS_POINTS || []).filter(p => p && isFinite(p.lat) && isFinite(p.lon));
+    if (!pts.length) return;
+    try {
+      const c = JSON.parse(localStorage.getItem(NWS_KEY) || 'null');
+      if (c && Date.now() - c.t < 10 * 60000) { NWS = c.a; return renderNews(); }
+    } catch (e) {}
+    const seen = {}, out = [];
+    await Promise.all(pts.map(async p => {
+      try {
+        const r = await fetch('https://api.weather.gov/alerts/active?point=' + (+p.lat).toFixed(4) + ',' + (+p.lon).toFixed(4), { headers: { Accept: 'application/geo+json' } });
+        if (!r.ok) return;
+        const j = await r.json();
+        (j.features || []).forEach(f => {
+          const x = f.properties || {};
+          if (x.severity !== 'Severe' && x.severity !== 'Extreme') return;
+          if (x.status && x.status !== 'Actual') return;
+          const end = x.ends || x.expires;
+          if (end && new Date(end) < new Date()) return;
+          const key = (x.event || '') + '|' + p.name;
+          if (seen[key]) return; seen[key] = 1;
+          out.push({ event: x.event, headline: x.headline, severity: x.severity, ends: x.ends, expires: x.expires, place: p.name,
+            link: 'https://forecast.weather.gov/MapClick.php?lat=' + p.lat + '&lon=' + p.lon });
+        });
+      } catch (e) { /* weather service unreachable — no banner */ }
+    }));
+    out.sort((a, b) => (a.severity === 'Extreme' ? 0 : 1) - (b.severity === 'Extreme' ? 0 : 1));
+    NWS = out;
+    try { localStorage.setItem(NWS_KEY, JSON.stringify({ t: Date.now(), a: NWS })); } catch (e) {}
+    renderNews();
   }
 
   // ---------------------------------------------------------- tile helpers
@@ -148,6 +229,7 @@
   function render() {
     renderBar();
     renderNews();
+    renderOut();
     const q = $('#q').value.trim().toLowerCase();
     const view = sectionsForView();
     const all = []; view.forEach(s => s.links.forEach(l => all.push(Object.assign({ section: s.title }, l))));
@@ -299,7 +381,7 @@
   function renderNews() {
     const alerts = editMode ? [] : ANN.filter(a => a.type === 'alert');
     const news = editMode ? [] : ANN.filter(a => a.type !== 'alert');
-    $('#alerts').innerHTML = alerts.map(a =>
+    $('#alerts').innerHTML = (editMode ? '' : NWS.map(nwsBar).join('')) + alerts.map(a =>
       '<div class="alert-bar"><span class="ai">🚨</span><div class="at"><b>' + esc(a.title) + '</b>' +
       (a.message ? '<div>' + annBody(a.message) + '</div>' : '') +
       '<div class="am">' + esc(annWhen(a)) + (a.audience === 'managers' ? ' · Managers' : '') + '</div></div>' + annLink(a, 'al') + '</div>').join('');
@@ -444,7 +526,7 @@
       P.store.set(K.fav, favs, true);
       return render();
     }
-    if (e.target.closest('[data-unlock]')) return unlock();
+    if (e.target.closest('[data-unlock]') || e.target.closest('[data-relogin]')) return unlock();
     const mv = e.target.closest('[data-mv]');
     if (mv && editMode) {
       e.stopPropagation();
@@ -459,4 +541,6 @@
 
   render();
   load();
+  loadNWS();
+  setInterval(() => { loadNWS(); if (session && !document.hidden) loadOut(); }, 10 * 60000);
 })();
