@@ -9,7 +9,10 @@
   const P = window.PTO, $ = P.$, $$ = P.$$, esc = P.esc;
   const API = String((window.HUB_CONFIG || {}).API_URL || '').trim();
   const HAS_API = /^https:\/\/script\.google\.com\//.test(API);
-  const K = { fav: 'lwhhub_favs', who: 'lwhhub_who', type: 'lwhhub_type', sess: 'lwhhub_session', cache: 'lwhhub_cache' };
+  const K = { fav: 'lwhhub_favs', who: 'lwhhub_who', type: 'lwhhub_type', sess: 'lwhhub_session', cache: 'lwhhub_cache',
+              me: 'lwhhub_me', outOpen: 'lwhhub_out_open' };
+  // Saved on this device only: { name: 'Tim', team: 'warehouse', asked: true }
+  let me = P.store.get(K.me); if (!me || typeof me !== 'object') me = null;
 
   let show = P.store.get(K.type) || 'all';
   let who = P.store.get(K.who) || 'all';
@@ -29,9 +32,13 @@
   P.renderWeather($('#wxBox'));
 
   // --------------------------------------------------------- greeting/clock
+  const myName = () => P.firstName((me && me.name) || (session && session.name) || '');
   function tick() {
     const d = new Date();
-    $('#hello').textContent = P.greeting();
+    const n = myName();
+    $('#hello').textContent = P.greeting() + (n ? ', ' + n : '');
+    const meLink = $('#meLink');
+    if (meLink) meLink.textContent = n ? 'Not ' + n + '? Change name' : 'Add your name';
     $('#when').textContent = P.fmt(d, 'long');
     $('#clock').textContent = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   }
@@ -95,9 +102,33 @@
     const box = $('#whosOut');
     if (!session || editMode) { box.hidden = true; box.innerHTML = ''; return; }
     box.hidden = false;
-    const head = '<div class="card-head"><h2>👥 Who’s Out</h2><span class="out-tools">' +
-      '<a class="how" href="https://nbr1hawgfan.github.io/LWH_PTO/manager/#calendar" target="_blank" rel="noopener">Team calendar ↗</a>' +
+    const open = !!P.store.get(K.outOpen);
+    box.classList.toggle('open', open);
+
+    // Slim summary bar (always shown) — tap to open the full list
+    let sum = '<span class="os-load">Loading…</span>';
+    if (OUT && OUT.error) sum = '<span class="os-warn">Tap to see details</span>';
+    else if (OUT) {
+      const later = OUT.outWeek.filter(r => !(r.start <= OUT.today && r.end >= OUT.today));
+      const t = OUT.outToday, MAXA = 5;
+      sum = '<span class="os-item"><span class="os-k">Today</span>' +
+          (t.length ? '<span class="os-av">' + t.slice(0, MAXA).map(r => '<span class="avatar" title="' + esc(r.name + ' · ' + r.type) + '">' + esc(P.initials(r.name)) + '</span>').join('') +
+            (t.length > MAXA ? '<span class="avatar more">+' + (t.length - MAXA) + '</span>' : '') + '</span>' : '<span class="os-ok">✅ Everyone’s in</span>') + '</span>' +
+        '<span class="os-item"><span class="os-k">Later this week</span><b>' + later.length + '</b></span>' +
+        (OUT.pending ? '<a class="os-item os-pend" href="https://nbr1hawgfan.github.io/LWH_PTO/manager/#approvals" target="_blank" rel="noopener">⏳ <b>' + OUT.pending + '</b> to approve</a>' : '');
+    }
+    const head = '<div class="out-strip">' +
+      '<button class="os-toggle" id="outToggle" aria-expanded="' + open + '"><span class="os-t">👥 Who’s Out</span>' +
+        '<span class="os-chev" aria-hidden="true">' + (open ? '▴' : '▾') + '</span></button>' +
+      '<div class="os-sum">' + sum + '</div>' +
+      '<span class="out-tools"><a class="how" href="https://nbr1hawgfan.github.io/LWH_PTO/manager/#calendar" target="_blank" rel="noopener">Calendar ↗</a>' +
       '<button class="how" id="outRefresh" title="Refresh">↻</button></span></div>';
+    if (!open) {
+      box.innerHTML = head;
+      $('#outToggle').onclick = toggleOut;
+      $('#outRefresh').onclick = () => { OUT = null; renderOut(); loadOut(true); };
+      return;
+    }
     let body;
     if (!OUT) body = '<div class="card-body"><div class="skel"></div><div class="skel" style="width:60%"></div></div>';
     else if (OUT.error === 'relogin') body = '<div class="card-body"><div class="note">Your PTO sign-in has timed out. <button class="how" data-relogin>Enter your PIN again</button> to see who’s out.</div></div>';
@@ -112,8 +143,10 @@
         (OUT.pending ? '<div class="out-p"><a href="https://nbr1hawgfan.github.io/LWH_PTO/manager/#approvals" target="_blank" rel="noopener">⏳ ' + OUT.pending + ' PTO request' + (OUT.pending === 1 ? '' : 's') + ' waiting for approval →</a></div>' : '');
     }
     box.innerHTML = head + body;
+    $('#outToggle').onclick = toggleOut;
     $('#outRefresh').onclick = () => { OUT = null; renderOut(); loadOut(true); };
   }
+  function toggleOut() { P.store.set(K.outOpen, !P.store.get(K.outOpen), true); renderOut(); }
 
   // ------------------------------------------------- National Weather Service
   const NWS_KEY = 'lwhhub_nws';
@@ -408,7 +441,7 @@
     const box = $('#news');
     if (!news.length) { box.innerHTML = ''; box.hidden = true; return; }
     box.hidden = false;
-    const MAX = 6, more = news.length > MAX && !box.dataset.all;
+    const MAX = 3, more = news.length > MAX && !box.dataset.all;
     box.innerHTML = '<div class="sec-title">📣 Company News <span class="n">' + news.length + '</span></div><div class="news-grid">' +
       (more ? news.slice(0, MAX) : news).map(a => {
         const t = ANN_T[a.type] || ANN_T.notice;
@@ -511,10 +544,51 @@
     c.classList.toggle('on', c.dataset.s === show);
     c.onclick = () => { show = c.dataset.s; P.store.set(K.type, show, true); $$('#show .chip').forEach(x => x.classList.toggle('on', x === c)); render(); };
   });
+  function setWho(w) {
+    who = w; P.store.set(K.who, who, true);
+    $$('#who .chip').forEach(x => x.classList.toggle('on', x.dataset.w === who));
+  }
   $$('#who .chip').forEach(c => {
     c.classList.toggle('on', c.dataset.w === who);
-    c.onclick = () => { who = c.dataset.w; P.store.set(K.who, who, true); $$('#who .chip').forEach(x => x.classList.toggle('on', x === c)); render(); };
+    c.onclick = () => { setWho(c.dataset.w); render(); };
   });
+
+  // ------------------------------------------------- "who are you" (this device only)
+  const TEAMS = [['', 'Skip — show everything'], ['warehouse', 'Warehouse'], ['transportation', 'Transportation'],
+                 ['managers', 'Managers'], ['hr', 'HR'], ['customers', 'Customer']];
+  async function askMe(first) {
+    const cur = me || {};
+    const v = await P.modal({
+      title: first ? 'Welcome to the LWH Hub' : 'Your name on this device',
+      html: (first ? '<p style="margin-bottom:14px">Make the hub yours. This is saved only on this phone or computer.</p>' : '') +
+        '<div class="field"><label for="meName">First name</label><input class="input" id="meName" maxlength="40" autocomplete="given-name" value="' + esc(cur.name || '') + '" placeholder="e.g. Tim"></div>' +
+        '<div class="field"><label for="meTeam">Your team</label><select class="input" id="meTeam">' +
+          TEAMS.map(t => '<option value="' + t[0] + '"' + ((cur.team || '') === t[0] ? ' selected' : '') + '>' + t[1] + '</option>').join('') +
+        '</select><div class="hint-key" style="margin-top:6px">Shows your team’s apps first. You can still switch anytime.</div></div>' +
+        (!first && cur.name ? '<button type="button" class="how" id="meClear" style="margin-top:4px">Forget me on this device</button>' : ''),
+      buttons: [
+        { label: first ? 'Skip' : 'Cancel', cls: 'btn-ghost', value: 'skip' },
+        { label: 'Save', cls: 'btn-red', value: m => ({ name: $('#meName', m).value.trim().replace(/\s+/g, ' '), team: $('#meTeam', m).value }) }
+      ]
+    });
+    if (v && typeof v === 'object') {
+      me = { name: v.name, team: v.team, asked: true };
+      P.store.set(K.me, me, true);
+      if (v.team) setWho(v.team);
+      tick(); render();
+    } else if (first) {
+      me = { asked: true }; P.store.set(K.me, me, true);   // skipped — don't ask again
+    }
+  }
+  // "Forget me" lives inside the modal; close it and reset
+  document.addEventListener('click', e => {
+    if (e.target.id !== 'meClear') return;
+    const bg = e.target.closest('.modal-bg'); if (bg) bg.remove();
+    me = { asked: true }; P.store.set(K.me, me, true); tick();
+    P.toast('Name removed from this device');
+  });
+  $('#meLink').onclick = () => askMe(false);
+  if (!me || !me.asked) setTimeout(() => askMe(true), 600);
   $('#howInstall').onclick = () => P.modal({
     title: 'Installing an App',
     html: '<p style="margin-bottom:14px">Tiles marked <span class="pill app">📲 App · Installable</span> can be added to your phone or computer like a regular app: their own icon, full screen, and quicker to open. Open the app first, then:</p>' +
