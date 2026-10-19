@@ -183,21 +183,41 @@
     return 'link';
   };
 
+  // Icon: an emoji, or an image path/URL (e.g. assets/icons/lwh-portals.png)
+  const iconHtml = l => {
+    const v = String(l.icon || '').trim();
+    if (/^(https?:\/\/|assets\/|\.\/)/i.test(v) || /\.(png|svg|jpe?g|webp|gif)(\?.*)?$/i.test(v)) {
+      return '<span class="ic ic-img"><img src="' + esc(v) + '" alt="" loading="lazy"></span>';
+    }
+    return '<span class="ic">' + esc(v || '🔗') + '</span>';
+  };
+
+  // Featured tiles (HUB_CONFIG.FEATURED in links.js): highlighted with a label until their end date
+  const featuredOf = l => {
+    const list = (window.HUB_CONFIG || {}).FEATURED || [];
+    const today = new Date().toISOString().slice(0, 10);
+    const norm = s => String(s || '').trim().toLowerCase().replace(/\/+$/, '');
+    return list.find(f => f && (!f.until || today <= f.until) &&
+      ((f.url && norm(f.url) === norm(l.url)) || (f.name && norm(f.name) === norm(l.name)))) || null;
+  };
+
   function tile(l) {
     const t = typeOf(l), on = favs.indexOf(l.url) !== -1;
+    const feat = editMode ? null : featuredOf(l);
+    const featMark = feat ? '<span class="pill feat-p">★ ' + esc(feat.label || 'New') + '</span>' : '';
     const lockMark = l.locked ? '<span class="pill lock" title="Managers only">🔒 Managers</span>' : '';
     if (editMode) {
       return '<div class="ht ' + kind(l) + (l.active === false ? ' off-tile' : '') + '" data-edit="' + esc(l.id) + '">' +
-        '<span class="ic">' + esc(l.icon || '🔗') + '</span>' +
+        iconHtml(l) +
         '<span style="min-width:0"><b>' + esc(l.name) + '</b>' + (l.desc ? '<span class="d">' + esc(l.desc) + '</span>' : '') +
         '<span class="meta">' + (l.active === false ? '<span class="pill hidden-p">Hidden</span>' : '') + lockMark +
         '<span class="pill ' + t + '">' + TYPES[t].pill + '</span><span class="dom">' + esc(host(l.url)) + '</span></span></span>' +
         '<span class="edit-tools"><button data-mv="up" data-id="' + esc(l.id) + '" title="Move up">↑</button><button data-mv="down" data-id="' + esc(l.id) + '" title="Move down">↓</button></span></div>';
     }
-    return '<a class="ht ' + kind(l) + '" href="' + esc(l.url) + '" target="_blank" rel="noopener">' +
-      '<span class="ic">' + esc(l.icon || '🔗') + '</span>' +
+    return '<a class="ht ' + kind(l) + (feat ? ' feat' : '') + '" href="' + esc(l.url) + '" target="_blank" rel="noopener">' +
+      iconHtml(l) +
       '<span style="min-width:0"><b>' + esc(l.name) + '</b>' + (l.desc ? '<span class="d">' + esc(l.desc) + '</span>' : '') +
-      '<span class="meta">' + lockMark + '<span class="pill ' + t + '">' + TYPES[t].pill + '</span><span class="dom">' + esc(host(l.url)) + ' ↗</span></span></span>' +
+      '<span class="meta">' + featMark + lockMark + '<span class="pill ' + t + '">' + TYPES[t].pill + '</span><span class="dom">' + esc(host(l.url)) + ' ↗</span></span></span>' +
       '<button class="star' + (on ? ' on' : '') + '" data-fav="' + esc(l.url) + '" title="' + (on ? 'Unpin' : 'Pin to top') + '" aria-label="' + (on ? 'Unpin' : 'Pin') + ' ' + esc(l.name) + '">' + (on ? '★' : '☆') + '</button></a>';
   }
 
@@ -331,7 +351,7 @@
         '<datalist id="etSecs">' + adminSections.map(s => '<option value="' + esc(s) + '">').join('') + '</datalist><div class="hint">Pick one or type a new section.</div></div></div>' +
         '<div class="field"><label for="etUrl">Link</label><input class="input" id="etUrl" type="url" placeholder="https://…" value="' + esc(r.url || '') + '"></div>' +
         '<div class="row-2"><div class="field"><label for="etDesc">Short description</label><input class="input" id="etDesc" maxlength="140" value="' + esc(r.desc || '') + '"></div>' +
-        '<div class="row-2"><div class="field"><label for="etIcon">Icon (emoji)</label><input class="input" id="etIcon" maxlength="8" value="' + esc(r.icon || '') + '" style="font-size:22px;text-align:center"></div>' +
+        '<div class="row-2"><div class="field"><label for="etIcon">Icon (emoji or image path)</label><input class="input" id="etIcon" maxlength="300" value="' + esc(r.icon || '') + '" style="font-size:22px;text-align:center"></div>' +
         '<div class="field"><label for="etType">Kind</label><select class="input" id="etType">' +
         [['', 'Auto-detect'], ['app', 'App'], ['site', 'Google Site'], ['doc', 'Document'], ['link', 'Website']].map(o => '<option value="' + o[0] + '"' + ((r.type || '') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') +
         '</select></div></div></div>' +

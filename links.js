@@ -15,7 +15,13 @@ window.HUB_CONFIG = {
   NWS_POINTS: [
     { name: 'Fort Smith', lat: 35.3859, lon: -94.3985 }
   ],
-  API_URL: 'https://script.google.com/macros/s/AKfycbwYqndx1hRNXRu04gP2x8qRdk6gHsgkOaUKfQkEGFwRI0uIVxH1LziqMpCLtuDdAcRk/exec'   // LWH Hub Links Sheet
+  API_URL: 'https://script.google.com/macros/s/AKfycbwYqndx1hRNXRu04gP2x8qRdk6gHsgkOaUKfQkEGFwRI0uIVxH1LziqMpCLtuDdAcRk/exec',   // LWH Hub Links Sheet
+
+  // Highlighted tiles: red background + a label pill until the "until" date (YYYY-MM-DD).
+  // Matched by the tile's URL or name. Delete a line (or let the date pass) to stop highlighting it.
+  FEATURED: [
+    { name: 'LWH Portals', url: 'https://nbr1hawgfan.github.io/LWH_Portals/', label: 'New', until: '2026-11-30' }
+  ]
 };
 
 window.PTO_CONFIG = {
@@ -84,6 +90,7 @@ window.HUB_SECTIONS = [
   {
     title: 'Customers',
     links: [
+      { name: 'LWH Portals', url: 'https://nbr1hawgfan.github.io/LWH_Portals/', desc: 'Customer Portal and Mobile Portal in one app', icon: 'assets/icons/lwh-portals.png', type: 'app', for: ['customers', 'warehouse', 'managers'] },
       { name: 'Customer Portal', url: 'https://portal.logistics-warehouse.biz/Default.aspx', desc: 'Customer inventory and reports portal', icon: '🌐', for: ['customers', 'managers'] },
       { name: 'One Source Inventory', url: 'https://nbr1hawgfan.github.io/ONEPH_Inventory/', desc: 'One Source inventory — Zero St, 5th St, Van Buren', icon: '📦', for: ['customers', 'managers'] },
       { name: 'TRAFO Inventory', url: 'https://nbr1hawgfan.github.io/TRAFO_Inventory/', desc: 'TRAFO customer inventory', icon: '📦', for: ['customers', 'managers'] }
