@@ -20,7 +20,8 @@ window.HUB_CONFIG = {
   // Highlighted tiles: red background + a label pill until the "until" date (YYYY-MM-DD).
   // Matched by the tile's URL or name. Delete a line (or let the date pass) to stop highlighting it.
   FEATURED: [
-    { name: 'LWH Portals', url: 'https://nbr1hawgfan.github.io/LWH_Portals/', label: 'New', until: '2026-11-30' }
+    { name: 'LWH Portals', url: 'https://nbr1hawgfan.github.io/LWH_Portals/', label: 'New', until: '2026-11-30' },
+    { name: 'PDF Tools', url: 'https://pdf.logisticswarehouse.net/', label: 'New', until: '2026-12-31' }
   ]
 };
 
@@ -41,6 +42,7 @@ window.HUB_SECTIONS = [
       { name: 'PTO & Time Off', url: 'https://nbr1hawgfan.github.io/LWH_PTO/', desc: 'Request PTO, ask for time off, check your balance', icon: '🌴', for: ['everyone'] },
       { name: 'Employee Handbook', url: 'https://drive.google.com/file/d/1ALaxNglkkOjg8npnXnvYVrl7DkokqPow/view?usp=sharing', desc: 'Company policies and handbook (Google Drive)', icon: '📘', for: ['everyone'] },
       { name: 'Employee Timesheet', url: 'https://nbr1hawgfan.github.io/LWH-Employee-Timesheet/', desc: 'Weekly hours and timesheet', icon: '⏱️', for: ['everyone'] },
+      { name: 'PDF Tools', url: 'https://pdf.logisticswarehouse.net/', desc: 'View, combine, mark up, sign, and convert PDFs (PDF to Word/Excel)', icon: 'assets/icons/lwh-pdf-tools.png', for: ['everyone'] },
       { name: 'Doc Scanner', url: 'https://nbr1hawgfan.github.io/LWH_DocScanner/', desc: 'Scan paperwork to a clean PDF', icon: '📄', for: ['everyone'] },
       { name: 'Business Cards', url: 'https://nbr1hawgfan.github.io/LWH_Business-Card/', desc: 'Digital company business cards', icon: '🪪', for: ['everyone'] },
       { name: 'LWH COMS', url: 'https://nbr1hawgfan.github.io/LWH_COMS/', desc: 'Company communications', icon: '📣', for: ['everyone'] },

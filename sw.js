@@ -1,6 +1,6 @@
 /* LWH PTO — Hub service worker
    Bump VERSION whenever you upload changed files so phones pick them up. */
-const VERSION = 'lwhhub-v2.4.1';
+const VERSION = 'lwhhub-v2.4.2';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'links.js?v=2.4.0',
   'assets/css/theme.css?v=2.4.0', 'assets/js/common.js?v=2.4.0', 'assets/js/hub.js?v=2.4.0',
