@@ -21,7 +21,8 @@ window.HUB_CONFIG = {
   // Matched by the tile's URL or name. Delete a line (or let the date pass) to stop highlighting it.
   FEATURED: [
     { name: 'LWH Portals', url: 'https://nbr1hawgfan.github.io/LWH_Portals/', label: 'New', until: '2026-11-30' },
-    { name: 'PDF Tools', url: 'https://pdf.logisticswarehouse.net/', label: 'New', until: '2026-12-31' }
+    { name: 'PDF Tools', url: 'https://pdf.logisticswarehouse.net/', label: 'New', until: '2026-12-31' },
+    { name: 'Forklift Certification', url: 'https://nbr1hawgfan.github.io/LWH-Warehouse-Toolkit/?view=forkliftTest', label: 'New', until: '2026-12-31' }
   ]
 };
 
@@ -57,6 +58,8 @@ window.HUB_SECTIONS = [
       { name: 'LWH Daily Forms', url: 'https://sites.google.com/logisticswarehouse.net/lwhdailyforms/home', desc: 'Daily warehouse forms and checklists', icon: '📝', for: ['warehouse'] },
       { name: 'Inventory Lookups', url: 'https://sites.google.com/logisticswarehouse.net/inventorylookups/home', desc: 'Look up customer inventory', icon: '🔎', for: ['warehouse'] },
       { name: 'Forklift Inspection', url: 'https://nbr1hawgfan.github.io/LWH_Forklift_Inspections/', desc: 'Daily forklift pre-use inspection', icon: '🛞', for: ['warehouse'] },
+      { name: 'Forklift Certification', url: 'https://nbr1hawgfan.github.io/LWH-Warehouse-Toolkit/?view=forkliftTest', desc: 'Forklift classroom training and written test (sign in with your employee ID + PIN)', icon: '🏗️', for: ['warehouse'] },
+      { name: 'Verify a Forklift Cert', url: 'https://nbr1hawgfan.github.io/LWH-Warehouse-Toolkit/?view=fcVerify', desc: 'Check an operator\'s forklift certification is current — no sign-in needed', icon: '✅', for: ['warehouse', 'managers'] },
       { name: 'Mobile Scan Portal', url: 'http://mobile.logistics-warehouse.biz/', desc: 'Handheld scanning portal', icon: '📱', for: ['warehouse'] },
       { name: 'Inventory', url: 'https://nbr1hawgfan.github.io/LWH_Inventory/', desc: 'Warehouse inventory', icon: '📋', for: ['warehouse'] },
       { name: 'Item Search', url: 'https://nbr1hawgfan.github.io/LWH_Item-Search/', desc: 'Search items and locations', icon: '🔍', for: ['warehouse'] },
