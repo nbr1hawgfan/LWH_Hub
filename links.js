@@ -81,7 +81,6 @@ window.HUB_SECTIONS = [
       { name: 'Trailer Repair Apps', url: 'https://sites.google.com/logisticswarehouse.net/trailerrepairapps/home', desc: 'Trailer repair requests and tracking', icon: '🔧', for: ['transportation'] },
       { name: 'Trailer Shop', url: 'https://nbr1hawgfan.github.io/LWH_Trailer_Shop/', desc: 'Trailer defect repairs and shop work', icon: '🛠️', for: ['transportation'] },
       { name: 'Load Check-In', url: 'https://nbr1hawgfan.github.io/LWH_Load_Check-In/', desc: 'Driver check-in for scheduled loads', icon: '🛎️', for: ['transportation', 'warehouse'] },
-      { name: 'Load Board', url: 'https://nbr1hawgfan.github.io/LWH_LoadBoard/', desc: 'Loads and dispatch board', icon: '🗺️', for: ['transportation', 'managers'] },
       { name: 'Yard Check', url: 'https://nbr1hawgfan.github.io/Yard_Check/', desc: 'Count trailers at a customer yard', icon: '🅿️', for: ['transportation'] },
       { name: 'Trailer Dwell', url: 'https://nbr1hawgfan.github.io/Trailer_Dwell/', desc: 'Trailer dwell time at customer sites', icon: '⏳', for: ['transportation', 'managers'] }
     ]
