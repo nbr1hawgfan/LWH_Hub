@@ -74,11 +74,14 @@
   td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
   .note { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
   .hours text { font-size: 10px; fill: var(--muted); font-family: var(--body); }
+#people th:last-child,#people td:last-child,#nets th:last-child,#nets td:last-child{padding-left:14px;white-space:nowrap}
+.netname{background:none;border:0;padding:0;text-align:left;cursor:pointer;color:inherit;font:inherit}
+.netname small,#people td small,#nets td small{color:var(--muted)}
 </style>
 </head>
 <body>
 <header class="band"><div class="in">
-  <div><h1>App Usage</h1><div class="sub">Logistics Warehouse apps · anonymous open counts</div></div>
+  <div><h1>App Usage</h1><div class="sub">Logistics Warehouse apps · opens, actions, people &amp; networks</div></div>
   <a href="../">← Hub</a>
 </div></header>
 <div class="navbar"></div>
@@ -109,6 +112,12 @@
 
     <div class="kpis" id="kpis"></div>
 
+    <div class="card" style="margin-bottom:18px" id="spotCard" hidden>
+      <div class="card-h"><h2>Spotlight: Dock Appointments</h2><span class="n">schedule.logisticswarehouse.net</span></div>
+      <div class="card-b" id="spot"></div>
+    </div>
+
+
     <div class="card">
       <div class="card-h"><h2>Most used</h2><span class="n" id="rankNote"></span></div>
       <ul class="rows" id="rank"></ul>
@@ -126,6 +135,17 @@
       </div>
     </div>
 
+    <div class="grid2" id="adminCards" hidden style="margin-top:18px">
+      <div class="card">
+        <div class="card-h"><h2>People</h2><span class="n">signed-in names · only you see this</span></div>
+        <div class="card-b" id="people"></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h2>Networks</h2><span class="n">by IP address · tap one to name it</span></div>
+        <div class="card-b" id="nets"></div>
+      </div>
+    </div>
+
     <div class="card" style="margin-top:18px">
       <div class="card-h"><h2>Feature actions</h2><span class="n">counted with lwhTrack('name')</span></div>
       <div class="card-b" id="events"></div>
@@ -138,7 +158,7 @@
   var URL_ = 'https://tjivcqxnkftujceumdtx.supabase.co/rest/v1/rpc/app_usage_summary';
   var KEY = 'sb_publishable_PYlWSW6-Gi-QZl91IXUq0Q_W5mO3sDT';
   // Every app that carries the tracking snippet. Keep in sync when a new app gets it.
-  var ALL_APPS = ['Absence Calendar','BQ Dashboard','Business Card & Label','Customer Shipment Weights','Doc Scanner','Driver Personal Time','Driver Toolkit','Employee Timesheet','Fleet View','Forklift Inspections','Forklift Repair Costing','FRAWI Inventory','Inbound Load Tracker','Inventory Label Printer','LoadBoard','LWH COMS','LWH Hub','LWH Portals','Nissan Scrap','Nissan Warehouse','Office Chair Quarterback','Off-Site WMS','OneSource Inbound','ONEPH Inventory','Pallet Bay History','PTO','Safety Training','Tag Generator','Trailer Dwell','Trailer Shop','TRAFO Inventory','Transportation Manager','Warehouse Toolkit'];
+  var ALL_APPS = ['Absence Calendar','BQ Dashboard','Business Card & Label','Customer Shipment Weights','Doc Scanner','Dock Appointments','Driver Personal Time','Driver Toolkit','Employee Timesheet','Fleet View','Forklift Inspections','Forklift Repair Costing','FRAWI Inventory','Inbound Load Tracker','Inventory Label Printer','LoadBoard','LWH COMS','LWH Hub','LWH Portals','Nissan Scrap','Nissan Warehouse','Office Chair Quarterback','Off-Site WMS','OneSource Inbound','ONEPH Inventory','Pallet Bay History','PTO','Safety Training','Tag Generator','Trailer Dwell','Trailer Shop','TRAFO Inventory','Transportation Manager','Warehouse Toolkit'];
 
   var $ = function (id) { return document.getElementById(id); };
   var store = {}; try { store = window.localStorage; } catch (e) {}
@@ -187,6 +207,7 @@
       ['App opens', fmt(total), 'last ' + days + ' days'],
       ['Apps in use', apps.length + ' / ' + ALL_APPS.length, 'opened at least once'],
       ['Devices', fmt(data.devices_total), 'phones & PCs seen'],
+      ['People', fmt(data.users_total), 'signed-in names · ' + fmt(data.networks_total) + ' network' + (data.networks_total == 1 ? '' : 's')],
       ['Top app', top ? esc(top.app) : '—', top ? fmt(top.opens) + ' opens' : 'no data yet'],
       ['This week', fmt(last7), prev7 ? (last7 >= prev7 ? '▲ ' : '▼ ') + fmt(Math.abs(last7 - prev7)) + ' vs last week' : 'first week of data']
     ].map(function (k) {
@@ -205,7 +226,7 @@
       var series = keys.map(function (k) { return (byApp[a.app] || {})[k] || 0; });
       var sm = Math.max.apply(null, series) || 1, w = 300, h = 26, step = series.length > 1 ? w / (series.length - 1) : w;
       var pts = series.map(function (v, i) { return (i * step).toFixed(1) + ',' + (h - 2 - (v / sm) * (h - 4)).toFixed(1); }).join(' ');
-      return '<li class="row"><div><div class="nm">' + esc(a.app) + '</div><div class="meta">' + fmt(a.devices) + ' device' + (a.devices == 1 ? '' : 's') + ' · last used ' + ago(a.last_seen) + ' · <span class="tr ' + cls + '">' + tl + '</span>' + (a.actions ? ' · ' + fmt(a.actions) + ' actions' : '') + '</div></div>' +
+      return '<li class="row"><div><div class="nm">' + esc(a.app) + '</div><div class="meta">' + fmt(a.devices) + ' device' + (a.devices == 1 ? '' : 's') + (a.users ? ' · ' + fmt(a.users) + (a.users == 1 ? ' person' : ' people') : '') + ' · last used ' + ago(a.last_seen) + ' · <span class="tr ' + cls + '">' + tl + '</span>' + (a.actions ? ' · ' + fmt(a.actions) + ' actions' : '') + '</div></div>' +
         '<div class="num">' + fmt(a.opens) + '<small>opens</small></div>' +
         '<svg class="spark" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" aria-hidden="true"><polyline points="' + pts + '" fill="none" stroke="var(--red)" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>' +
         '<div class="bar"><i style="width:' + Math.max(2, a.opens / max * 100).toFixed(1) + '%"></i></div></li>';
@@ -232,8 +253,53 @@
       ? '<table><thead><tr><th>App</th><th>Action</th><th class="r">Count</th></tr></thead><tbody>' + data.events.map(function (e) { return '<tr><td>' + esc(e.app) + '</td><td>' + esc(e.event) + '</td><td class="r">' + fmt(e.n) + '</td></tr>'; }).join('') + '</tbody></table>'
       : '<div class="empty">No feature actions yet. Apps only count opens for now; individual buttons can be added later for the apps that get used most.</div>';
 
+    renderSpot(); renderAdmin();
     $('stamp').textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   }
+
+  // Spotlight on the app to watch most right now
+  var SPOT = 'Dock Appointments';
+  var SPOT_NAMES = { carrier_booked_inbound: 'Carrier booked · inbound', carrier_booked_outbound: 'Carrier booked · outbound', carrier_booked: 'Carrier booked',
+    carrier_rescheduled: 'Carrier rescheduled', carrier_cancelled: 'Carrier cancelled', team_sign_in: 'Team sign-ins', team_booked: 'Team booked for a carrier',
+    team_rescheduled: 'Team rescheduled', board_arrived: 'Checked in', board_at_door: 'At door', board_done: 'Done', board_no_show: 'No-show',
+    board_cancelled: 'Cancelled by LWH', board_booked: 'Back to booked', board_saved: 'Door / notes saved', time_blocked: 'Time blocked',
+    wms_list_emailed: 'WMS list emailed', shipments_imported: 'Shipments imported', settings_saved: 'Settings saved', notifications_on: 'Notifications turned on' };
+  function renderSpot() {
+    var a = data.apps.filter(function (x) { return x.app === SPOT; })[0];
+    $('spotCard').hidden = false;
+    if (!a) { $('spot').innerHTML = '<div class="empty">No activity yet — tracking started Nov 27, 2026.</div>'; return; }
+    var ev = data.events.filter(function (e) { return e.app === SPOT; });
+    var acts = ev.filter(function (e) { return e.event.indexOf('screen:') !== 0; }), scr = ev.filter(function (e) { return e.event.indexOf('screen:') === 0; });
+    var sum = function (re) { return acts.filter(function (e) { return re.test(e.event); }).reduce(function (t, e) { return t + e.n; }, 0); };
+    var tiles = [['Opens', a.opens], ['Devices', a.devices], ['People', a.users], ['Carrier bookings', sum(/^carrier_booked/)], ['Reschedules', sum(/rescheduled$/)], ['Cancels', sum(/cancelled$/)], ['Dock board updates', sum(/^board_/)]];
+    $('spot').innerHTML = '<div class="kpis" style="margin:0 0 12px">' + tiles.map(function (t) { return '<div class="kpi"><div class="l">' + t[0] + '</div><div class="v">' + fmt(t[1]) + '</div></div>'; }).join('') + '</div>' +
+      (acts.length ? '<table><thead><tr><th>Action</th><th class="r">Count</th></tr></thead><tbody>' + acts.map(function (e) { return '<tr><td>' + esc(SPOT_NAMES[e.event] || e.event) + '</td><td class="r">' + fmt(e.n) + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
+      (scr.length ? '<div class="note" style="margin-top:10px">Screens opened: ' + scr.map(function (e) { return esc(e.event.slice(7)) + ' ' + fmt(e.n); }).join(' · ') + '</div>' : '');
+  }
+  function renderAdmin() {
+    $('adminCards').hidden = !data.admin;
+    if (!data.admin) return;
+    var since = data.tracking_since ? new Date(data.tracking_since).toLocaleDateString([], { month: 'short', day: 'numeric' }) : 'today';
+    var u = data.users || [], n = data.networks || [];
+    $('people').innerHTML = u.length
+      ? '<table><thead><tr><th>Name</th><th>Apps</th><th class="r">Uses</th><th>Last</th></tr></thead><tbody>' + u.map(function (x) {
+          return '<tr><td><b>' + esc(x.name) + '</b>' + (x.devices > 1 ? ' <small>' + x.devices + ' devices</small>' : '') + '</td><td><small>' + esc(x.apps) + '</small></td><td class="r">' + fmt(x.events) + '</td><td><small>' + ago(x.last_seen) + '</small></td></tr>';
+        }).join('') + '</tbody></table><div class="note">Names come from the apps people sign in to (Toolkit, Driver Toolkit, Transportation Manager, Dock Appointments team) and the carrier name saved in Dock Appointments. Recording started ' + esc(since) + '.</div>'
+      : '<div class="empty">No names yet. Names started recording ' + esc(since) + '.</div>';
+    $('nets').innerHTML = n.length
+      ? '<table><thead><tr><th>Network</th><th class="r">Devices</th><th class="r">People</th><th class="r">Uses</th><th>Last</th></tr></thead><tbody>' + n.map(function (x) {
+          return '<tr><td><button type="button" class="netname" data-ip="' + esc(x.ip) + '" data-label="' + esc(x.label || '') + '" title="Name this network">' + (x.label ? '<b>' + esc(x.label) + '</b><br><small>' + esc(x.ip) + '</small>' : esc(x.ip) + ' <small>· name it</small>') + '</button><br><small>' + esc(x.apps) + '</small></td><td class="r">' + fmt(x.devices) + '</td><td class="r">' + fmt(x.users) + '</td><td class="r">' + fmt(x.events) + '</td><td><small>' + ago(x.last_seen) + '</small></td></tr>';
+        }).join('') + '</tbody></table><div class="note">Everyone on the same Wi-Fi shares one address, so a network usually means a building (or a phone carrier). Name your warehouse Wi-Fi addresses and they show by name.</div>'
+      : '<div class="empty">No networks yet. Recording started ' + esc(since) + '.</div>';
+  }
+  document.addEventListener('click', function (ev) {
+    var b = ev.target.closest('.netname'); if (!b) return;
+    var label = prompt('Name for network ' + b.dataset.ip + ' (for example "Zero St. Wi-Fi"). Leave blank to clear.', b.dataset.label || '');
+    if (label === null) return;
+    fetch(URL_.replace('app_usage_summary', 'app_usage_label'), { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_pin: pin, p_ip: b.dataset.ip, p_label: label }) })
+      .then(function (r) { if (!r.ok) throw 0; show(); }).catch(function () { alert('Could not save that name. Try again.'); });
+  });
 
   function show() {
     load().then(function (j) {
